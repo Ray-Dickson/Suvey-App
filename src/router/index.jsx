@@ -1,6 +1,5 @@
 // src/router/index.jsx
 import { createBrowserRouter } from 'react-router-dom';
-import App from '../App';
 import Login from '../pages/login';
 import Register from '../pages/register';
 import Dashboard from '../pages/dashboard';
@@ -9,6 +8,8 @@ import DashboardLayout from '../components/DashboardLayout';
 import CreateSurveyWrapper from '../pages/CreateSurvey';
 import MySurveys from '../pages/MySurveys';
 import Analytics from '../pages/Analytics';
+import SurveyPreview from '../pages/SurveyPreview';
+//import SurveyEdit from '../pages/SurveyEdit'; 
 
 const router = createBrowserRouter([
   {
@@ -22,7 +23,10 @@ const router = createBrowserRouter([
           { index: true, element: <Dashboard /> },
           { path: 'create', element: <CreateSurveyWrapper /> },
           { path: 'mysurveys', element: <MySurveys /> },
-          { path: 'analytics', element: <Analytics /> },
+          { path: 'survey/preview/:id', element: <SurveyPreview /> },
+          { path: 'survey/edit/:id', element: <CreateSurveyWrapper /> },
+          { path: 'survey/analytics/:id', element: <Analytics /> },
+          
         ],
       },
     ],

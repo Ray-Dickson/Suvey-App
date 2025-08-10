@@ -1,8 +1,9 @@
+// src/pages/CreateSurvey.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DndProvider, useDrop, useDrag } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { getSurveyDetails } from '../services/dummydata';
+import API from '../services/api';
 import { 
   Plus, 
   GripVertical, 
@@ -15,7 +16,6 @@ import {
 import toast from 'react-hot-toast';
 import QuestionEditor from '../components/QuestionEditor';
 
-// Main wrapper component that provides the DnD context
 const CreateSurveyWrapper = () => {
   return (
     <DndProvider backend={HTML5Backend}>
@@ -30,8 +30,11 @@ const CreateSurvey = () => {
   const [survey, setSurvey] = useState({
     title: '',
     description: '',
-    questions: [],
-    status: 'draft'
+    is_public: true,
+    allow_multiple_submissions: false,
+    requires_login: false,
+    status: 'draft',
+    questions: []
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -39,32 +42,44 @@ const CreateSurvey = () => {
 
   useEffect(() => {
     if (id) {
-      async function fetchSurvey() {
+      const fetchSurvey = async () => {
         setLoading(true);
         try {
-          const data = await getSurveyDetails();
-          setSurvey(data);
+          const response = await API.get(`/surveys/${id}`);
+          const surveyData = response.data;
+          
+          setSurvey({
+            ...surveyData,
+            questions: surveyData.questions.sort((a, b) => a.display_order - b.display_order)
+          });
         } catch (error) {
           toast.error('Failed to fetch survey');
           console.error('Error fetching survey:', error);
         } finally {
           setLoading(false);
         }
-      }
+      };
+      
       fetchSurvey();
     }
   }, [id]);
 
   const addQuestion = (type) => {
     const newQuestion = {
-      id: `q${Date.now()}`,
+      id: `temp-${Date.now()}`,
+      question_text: '',
       type,
-      question: '',
-      required: false,
-      order: survey.questions.length + 1,
-      options: type === 'radio' || type === 'checkbox' || type === 'dropdown' ? ['Option 1'] : [],
-      conditionalLogic: null
+      is_required: false,
+      display_order: survey.questions.length + 1,
+      options: ['radio', 'checkbox', 'dropdown'].includes(type) 
+        ? [{ 
+            id: `opt-${Date.now()}`, 
+            option_text: 'Option 1', 
+            display_order: 1 
+          }] 
+        : []
     };
+    
     setSurvey(prev => ({
       ...prev,
       questions: [...prev.questions, newQuestion]
@@ -81,12 +96,23 @@ const CreateSurvey = () => {
     }));
   };
 
-  const deleteQuestion = (questionId) => {
+  const deleteQuestion = async (questionId) => {
+    if (!questionId.startsWith('temp-')) {
+      try {
+        await API.delete(`/questions/${questionId}`);
+        toast.success('Question deleted');
+      } catch (error) {
+        toast.error('Failed to delete question');
+        console.error('Error deleting question:', error);
+        return;
+      }
+    }
+    
     setSurvey(prev => ({
       ...prev,
       questions: prev.questions
         .filter(q => q.id !== questionId)
-        .map((q, index) => ({ ...q, order: index + 1 }))
+        .map((q, index) => ({ ...q, display_order: index + 1 }))
     }));
   };
 
@@ -98,7 +124,7 @@ const CreateSurvey = () => {
     
     const updatedQuestions = newQuestions.map((q, index) => ({
       ...q,
-      order: index + 1
+      display_order: index + 1
     }));
     
     setSurvey(prev => ({
@@ -107,7 +133,7 @@ const CreateSurvey = () => {
     }));
   };
 
-  const saveSurvey = async () => {
+  const saveSurvey = async (publish = false) => {
     if (!survey.title.trim()) {
       toast.error('Please enter a survey title');
       return;
@@ -120,10 +146,37 @@ const CreateSurvey = () => {
 
     try {
       setSaving(true);
-      // Replace with your actual save API call
-      // const response = id ? await updateSurveyAPI(id, survey) : await createSurveyAPI(survey);
-      toast.success(`Survey ${id ? 'updated' : 'created'} successfully`);
-      // if (!id) navigate(`/builder/${response.id}`);
+      const surveyData = {
+        ...survey,
+        status: publish ? 'published' : survey.status,
+        questions: survey.questions.map(question => ({
+          id: question.id.startsWith('temp-') ? null : question.id,
+          question_text: question.question_text,
+          type: question.type,
+          is_required: question.is_required,
+          display_order: question.display_order,
+          options: question.options?.map(option => ({
+            id: option.id.startsWith('temp-') ? null : option.id,
+            option_text: option.option_text,
+            display_order: option.display_order
+          })) || []
+        }))
+      };
+
+      let response;
+      if (id) {
+        response = await API.put(`/surveys/${id}`, surveyData);
+        toast.success(`Survey ${publish ? 'published' : 'updated'} successfully`);
+      } else {
+        response = await API.post('/surveys', surveyData);
+        toast.success(`Survey ${publish ? 'published' : 'created'} successfully`);
+      }
+
+      if (publish) {
+        navigate('/dashboard');
+      } else if (!id) {
+        navigate(`/builder/${response.data.id}`);
+      }
     } catch (error) {
       toast.error(`Failed to ${id ? 'update' : 'create'} survey`);
       console.error('Error saving survey:', error);
@@ -132,30 +185,7 @@ const CreateSurvey = () => {
     }
   };
 
-  const publishSurvey = async () => {
-    if (!survey.title.trim()) {
-      toast.error('Please enter a survey title');
-      return;
-    }
-
-    if (survey.questions.length === 0) {
-      toast.error('Please add at least one question');
-      return;
-    }
-
-    try {
-      setSaving(true);
-      // Replace with your actual publish API call
-      // await publishSurveyAPI(id, { ...survey, status: 'published' });
-      toast.success('Survey published successfully');
-      navigate('/dashboard');
-    } catch (error) {
-      toast.error('Failed to publish survey');
-      console.error('Error publishing survey:', error);
-    } finally {
-      setSaving(false);
-    }
-  };
+  const publishSurvey = () => saveSurvey(true);
 
   const questionTypes = [
     { type: 'text', label: 'Text Input', icon: '📝' },
@@ -196,7 +226,7 @@ const CreateSurvey = () => {
         <div className="flex flex-col sm:flex-row gap-3">
           {id && (
             <button
-              onClick={() => navigate(`/survey/${id}`)}
+              onClick={() => navigate(`/dashboard/survey/preview/${id}`)}
               className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50"
             >
               <Eye className="h-4 w-4 mr-2" />
@@ -204,14 +234,14 @@ const CreateSurvey = () => {
             </button>
           )}
           <button
-            onClick={saveSurvey}
+            onClick={() => saveSurvey()}
             disabled={saving}
             className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-70"
           >
             <Save className="h-4 w-4 mr-2" />
             {saving ? 'Saving...' : 'Save'}
           </button>
-          {id && survey.status === 'draft' && (
+          {survey.status === 'draft' && (
             <button
               onClick={publishSurvey}
               disabled={saving}
@@ -258,6 +288,19 @@ const CreateSurvey = () => {
                   rows={3}
                   placeholder="Enter survey description"
                 />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="is_public"
+                  checked={survey.is_public}
+                  onChange={(e) => setSurvey(prev => ({ ...prev, is_public: e.target.checked }))}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="is_public" className="ml-2 block text-sm text-gray-700">
+                  Make survey public
+                </label>
               </div>
             </div>
           </div>

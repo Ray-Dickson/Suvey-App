@@ -1,5 +1,6 @@
+// src/components/QuestionEditor.jsx
 import { useState } from 'react';
-import { Plus, Trash2, Settings, Copy } from 'lucide-react';
+import { Plus, Trash2, Settings } from 'lucide-react';
 
 const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) => {
   const [showConditional, setShowConditional] = useState(false);
@@ -9,13 +10,23 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
   };
 
   const addOption = () => {
-    const newOptions = [...(question.options || []), `Option ${(question.options?.length || 0) + 1}`];
+    const newOptions = [
+      ...(question.options || []), 
+      { 
+        id: `opt-${Date.now()}`, 
+        option_text: `Option ${(question.options?.length || 0) + 1}`,
+        display_order: (question.options?.length || 0) + 1
+      }
+    ];
     updateQuestion(question.id, { options: newOptions });
   };
 
   const updateOption = (index, value) => {
     const newOptions = [...(question.options || [])];
-    newOptions[index] = value;
+    newOptions[index] = {
+      ...newOptions[index],
+      option_text: value
+    };
     updateQuestion(question.id, { options: newOptions });
   };
 
@@ -43,7 +54,7 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
           <input
             type="text"
             placeholder="Text input"
-            className="input"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
             disabled
           />
         );
@@ -52,7 +63,7 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
         return (
           <textarea
             placeholder="Text area"
-            className="input"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
             rows={3}
             disabled
           />
@@ -62,14 +73,14 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
         return (
           <div className="space-y-2">
             {(question.options || []).map((option, index) => (
-              <label key={index} className="flex items-center">
+              <label key={option.id || index} className="flex items-center">
                 <input
                   type="radio"
                   name={`preview-${question.id}`}
                   className="mr-2"
                   disabled
                 />
-                <span className="text-sm text-gray-600">{option}</span>
+                <span className="text-sm text-gray-600">{option.option_text}</span>
               </label>
             ))}
           </div>
@@ -79,13 +90,13 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
         return (
           <div className="space-y-2">
             {(question.options || []).map((option, index) => (
-              <label key={index} className="flex items-center">
+              <label key={option.id || index} className="flex items-center">
                 <input
                   type="checkbox"
                   className="mr-2"
                   disabled
                 />
-                <span className="text-sm text-gray-600">{option}</span>
+                <span className="text-sm text-gray-600">{option.option_text}</span>
               </label>
             ))}
           </div>
@@ -93,10 +104,12 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
       
       case 'dropdown':
         return (
-          <select className="input" disabled>
+          <select className="w-full px-3 py-2 border border-gray-300 rounded-lg" disabled>
             <option>Select an option</option>
             {(question.options || []).map((option, index) => (
-              <option key={index} value={option}>{option}</option>
+              <option key={option.id || index} value={option.option_text}>
+                {option.option_text}
+              </option>
             ))}
           </select>
         );
@@ -129,7 +142,7 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
           <span className="text-sm font-medium text-gray-500">
             {getQuestionTypeLabel(question.type)}
           </span>
-          {question.required && (
+          {question.is_required && (
             <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
               Required
             </span>
@@ -151,9 +164,9 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
       <div>
         <input
           type="text"
-          value={question.question}
-          onChange={(e) => handleQuestionChange('question', e.target.value)}
-          className="input font-medium"
+          value={question.question_text}
+          onChange={(e) => handleQuestionChange('question_text', e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg font-medium"
           placeholder="Enter your question"
         />
       </div>
@@ -163,12 +176,12 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Options</label>
           {(question.options || []).map((option, index) => (
-            <div key={index} className="flex items-center space-x-2">
+            <div key={option.id || index} className="flex items-center space-x-2">
               <input
                 type="text"
-                value={option}
+                value={option.option_text}
                 onChange={(e) => updateOption(index, e.target.value)}
-                className="input flex-1 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm flex-1"
                 placeholder={`Option ${index + 1}`}
               />
               <button
@@ -182,7 +195,7 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
           ))}
           <button
             onClick={addOption}
-            className="flex items-center text-sm text-primary-600 hover:text-primary-700 transition-colors duration-200"
+            className="flex items-center text-sm text-blue-600 hover:text-blue-700 transition-colors duration-200"
           >
             <Plus className="h-4 w-4 mr-1" />
             Add Option
@@ -198,11 +211,11 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={question.required}
-                onChange={(e) => handleQuestionChange('required', e.target.checked)}
+                checked={question.is_required}
+                onChange={(e) => handleQuestionChange('is_required', e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>
           </div>
 
@@ -222,12 +235,12 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
                   Show this question only if a previous question has a specific answer
                 </p>
                 <div className="space-y-2">
-                  <select className="input text-sm">
+                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                     <option>Select a question</option>
                     <option>Question 1</option>
                     <option>Question 2</option>
                   </select>
-                  <select className="input text-sm">
+                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                     <option>Select condition</option>
                     <option>equals</option>
                     <option>contains</option>
@@ -236,7 +249,7 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
                   <input
                     type="text"
                     placeholder="Value"
-                    className="input text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   />
                 </div>
               </div>
@@ -256,4 +269,4 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
   );
 };
 
-export default QuestionEditor; 
+export default QuestionEditor;

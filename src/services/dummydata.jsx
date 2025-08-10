@@ -53,6 +53,14 @@ const surveyDetails = {
   ],
 };
 
+export function getSurveys() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(surveys);
+    }, 1000);
+  });
+}
+
 export function getSurveyDetails() {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -63,10 +71,3 @@ export function getSurveyDetails() {
 
 const emptySurvey = []
 
-export function getSurveys() {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(surveys);
-    }, 1000);
-  });
-}
