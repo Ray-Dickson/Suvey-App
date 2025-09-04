@@ -40,15 +40,8 @@ const Analytics = () => {
       setLoading(true);
       const response = await API.get(`/analytics/surveys/${id}`);
       
-      // Transform questions to match frontend schema (text -> question)
-      const transformedSurvey = {
-        ...response.data,
-        questions: response.data.questions.map(q => ({
-          ...q,
-          question: q.text, // Map text field to question field
-          options: q.options || [] // Ensure options exists
-        }))
-      };
+      // Use the data as-is since backend now returns correct format
+      const transformedSurvey = response.data;
       
       setSurvey(transformedSurvey);
       setResponses(response.data.responses);
@@ -85,7 +78,7 @@ const Analytics = () => {
       };
     }
     
-    if (question.type === 'radio' || question.type === 'dropdown') {
+    if (question.type === 'multiple_choice' || question.type === 'dropdown') {
       const optionCounts = {};
       questionResponses.forEach(response => {
         optionCounts[response] = (optionCounts[response] || 0) + 1;
@@ -129,7 +122,7 @@ const Analytics = () => {
       };
     }
     
-    if (question.type === 'text' || question.type === 'textarea') {
+    if (question.type === 'short_text' || question.type === 'long_text') {
       return {
         type: 'text',
         total: questionResponses.length,
@@ -150,15 +143,15 @@ const Analytics = () => {
       return (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="card p-4 text-center">
-              <div className="text-2xl font-bold text-primary-600">{stats.total}</div>
+            <div className="bg-white rounded-lg shadow p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
               <div className="text-sm text-gray-600">Total Responses</div>
             </div>
-            <div className="card p-4 text-center">
+            <div className="bg-white rounded-lg shadow p-4 text-center">
               <div className="text-2xl font-bold text-green-600">{stats.average}</div>
               <div className="text-sm text-gray-600">Average Rating</div>
             </div>
-            <div className="card p-4 text-center">
+            <div className="bg-white rounded-lg shadow p-4 text-center">
               <div className="text-2xl font-bold text-yellow-600">
                 {stats.distribution.reduce((max, item) => item.count > max ? item.count : max, 0)}
               </div>
@@ -166,7 +159,7 @@ const Analytics = () => {
             </div>
           </div>
           
-          <div className="card p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Rating Distribution</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={stats.distribution}>
@@ -186,7 +179,7 @@ const Analytics = () => {
       return (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="card p-6">
+            <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Response Distribution</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={stats.distribution}>
@@ -199,7 +192,7 @@ const Analytics = () => {
               </ResponsiveContainer>
             </div>
             
-            <div className="card p-6">
+            <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Percentage Breakdown</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -223,7 +216,7 @@ const Analytics = () => {
             </div>
           </div>
           
-          <div className="card p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Detailed Breakdown</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -265,12 +258,12 @@ const Analytics = () => {
     if (stats.type === 'text') {
       return (
         <div className="space-y-6">
-          <div className="card p-4 text-center">
-            <div className="text-2xl font-bold text-primary-600">{stats.total}</div>
+          <div className="bg-white rounded-lg shadow p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
             <div className="text-sm text-gray-600">Text Responses</div>
           </div>
           
-          <div className="card p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">All Responses</h3>
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {stats.responses.map((response, index) => (
@@ -285,7 +278,7 @@ const Analytics = () => {
     }
     
     return (
-      <div className="card p-6 text-center">
+      <div className="bg-white rounded-lg shadow p-6 text-center">
         <p className="text-gray-500">No data available for this question type</p>
       </div>
     );
@@ -294,7 +287,7 @@ const Analytics = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -306,7 +299,7 @@ const Analytics = () => {
         <p className="text-gray-600 mb-6">The survey you're looking for doesn't exist.</p>
         <button
           onClick={() => navigate('/dashboard')}
-          className="btn btn-primary"
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
         >
           Back to Dashboard
         </button>
@@ -333,7 +326,7 @@ const Analytics = () => {
         
         <button
           onClick={() => window.print()}
-          className="btn btn-secondary flex items-center"
+          className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center"
         >
           <Download className="h-4 w-4 mr-2" />
           Export
@@ -342,10 +335,10 @@ const Analytics = () => {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="card p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-primary-100 rounded-lg">
-              <Users className="h-6 w-6 text-primary-600" />
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Users className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Responses</p>
@@ -354,7 +347,7 @@ const Analytics = () => {
           </div>
         </div>
         
-        <div className="card p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
               <BarChart3 className="h-6 w-6 text-green-600" />
@@ -366,7 +359,7 @@ const Analytics = () => {
           </div>
         </div>
         
-        <div className="card p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
               <TrendingUp className="h-6 w-6 text-blue-600" />
@@ -380,7 +373,7 @@ const Analytics = () => {
           </div>
         </div>
         
-        <div className="card p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <Calendar className="h-6 w-6 text-yellow-600" />
@@ -400,7 +393,7 @@ const Analytics = () => {
 
       {/* Question Selector */}
       {survey.questions.length > 0 && (
-        <div className="card p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Select Question to Analyze</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {survey.questions.map((question, index) => (
@@ -409,7 +402,7 @@ const Analytics = () => {
                 onClick={() => setSelectedQuestion(question)}
                 className={`p-3 text-left rounded-lg border transition-colors duration-200 ${
                   selectedQuestion?.id === question.id
-                    ? 'border-primary-500 bg-primary-50 text-primary-700'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
               >
@@ -428,7 +421,7 @@ const Analytics = () => {
       {/* Question Analytics */}
       {selectedQuestion && (
         <div className="space-y-6">
-          <div className="card p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-2">
               {survey.questions.findIndex(q => q.id === selectedQuestion.id) + 1}. {selectedQuestion.question}
             </h2>

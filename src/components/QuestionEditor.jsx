@@ -37,9 +37,9 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
 
   const getQuestionTypeLabel = (type) => {
     const types = {
-      text: 'Text Input',
-      textarea: 'Text Area',
-      radio: 'Radio Buttons',
+      short_text: 'Text Input',
+      long_text: 'Text Area',
+      multiple_choice: 'Radio Buttons',
       checkbox: 'Checkboxes',
       dropdown: 'Dropdown',
       rating: 'Rating (1-5)'
@@ -49,7 +49,7 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
 
   const renderQuestionPreview = () => {
     switch (question.type) {
-      case 'text':
+      case 'short_text':
         return (
           <input
             type="text"
@@ -59,7 +59,7 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
           />
         );
       
-      case 'textarea':
+      case 'long_text':
         return (
           <textarea
             placeholder="Text area"
@@ -69,7 +69,7 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
           />
         );
       
-      case 'radio':
+      case 'multiple_choice':
         return (
           <div className="space-y-2">
             {(question.options || []).map((option, index) => (
@@ -171,8 +171,8 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
         />
       </div>
 
-      {/* Question Options (for radio, checkbox, dropdown) */}
-      {(question.type === 'radio' || question.type === 'checkbox' || question.type === 'dropdown') && (
+      {/* Question Options (for multiple_choice, checkbox, dropdown) */}
+      {(question.type === 'multiple_choice' || question.type === 'checkbox' || question.type === 'dropdown') && (
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Options</label>
           {(question.options || []).map((option, index) => (

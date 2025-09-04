@@ -9,6 +9,7 @@ import CreateSurveyWrapper from '../pages/CreateSurvey';
 import MySurveys from '../pages/MySurveys';
 import Analytics from '../pages/Analytics';
 import SurveyPreview from '../pages/SurveyPreview';
+import PublicSurvey from '../pages/PublicSurvey';
 //import SurveyEdit from '../pages/SurveyEdit'; 
 
 const router = createBrowserRouter([
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    path: '/survey/:id',
+    element: <PublicSurvey />,
   },
 ]);
 

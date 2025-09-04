@@ -1,11 +1,11 @@
-// src/pages/SurveyPreview.jsx
+// src/pages/PublicSurvey.jsx
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Check, Send, ArrowLeft } from 'lucide-react';
 import API from '../services/api';
 import toast from 'react-hot-toast';
 
-const SurveyPreview = () => {
+const PublicSurvey = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [survey, setSurvey] = useState(null);
@@ -280,14 +280,6 @@ const SurveyPreview = () => {
     <div className="max-w-2xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200 mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Home
-        </button>
-        
         <div className="bg-white p-6 rounded-lg shadow">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{survey.title}</h1>
           {survey.description && (
@@ -340,4 +332,4 @@ const SurveyPreview = () => {
   );
 };
 
-export default SurveyPreview;
+export default PublicSurvey;

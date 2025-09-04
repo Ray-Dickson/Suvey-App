@@ -105,7 +105,7 @@ export default function Dashboard() {
           <p className="mt-2 text-gray-600">Manage your surveys and view responses</p>
         </div>
         <Link
-          to="/builder"
+          to="/dashboard/create"
           className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
         >
           <Plus className="h-5 w-5 mr-2" />
@@ -169,7 +169,7 @@ export default function Dashboard() {
             <p className="mt-1 text-sm text-gray-500">Get started by creating your first survey.</p>
             <div className="mt-6">
               <Link
-                to="/builder"
+                to="/dashboard/create"
                 className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200"
               >
                 <Plus className="h-5 w-5 mr-2" />

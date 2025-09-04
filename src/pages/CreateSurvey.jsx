@@ -71,7 +71,7 @@ const CreateSurvey = () => {
       type,
       is_required: false,
       display_order: survey.questions.length + 1,
-      options: ['radio', 'checkbox', 'dropdown'].includes(type) 
+      options: ['multiple_choice', 'checkbox', 'dropdown'].includes(type) 
         ? [{ 
             id: `opt-${Date.now()}`, 
             option_text: 'Option 1', 
@@ -157,7 +157,7 @@ const CreateSurvey = () => {
         };
 
         // Only include options for relevant question types
-        if (['radio', 'checkbox', 'dropdown'].includes(question.type)) {
+        if (['multiple_choice', 'checkbox', 'dropdown'].includes(question.type)) {
           questionData.options = question.options?.map(option => option.option_text) || [];
         }
 
@@ -168,7 +168,7 @@ const CreateSurvey = () => {
         title: survey.title,
         description: survey.description,
         is_public: survey.is_public,
-        status: publish ? 'published' : survey.status,
+        status: publish ? 'published' : (survey.status || 'draft'),
         questions: transformedQuestions,
         user_id: user?.id  // Include user ID from context
       };
@@ -189,7 +189,7 @@ const CreateSurvey = () => {
       if (publish) {
         navigate('/dashboard');
       } else if (!id) {
-        navigate(`/builder/${response.data.surveyId}`);
+        navigate(`/dashboard/survey/edit/${response.data.surveyId}`);
       }
     } catch (error) {
       console.error('Full error details:', {
@@ -198,9 +198,15 @@ const CreateSurvey = () => {
         stack: error.stack
       });
 
-      const errorMessage = error.response?.data?.message 
-        ? error.response.data.message
-        : `Failed to ${id ? 'update' : 'create'} survey. Please try again.`;
+      let errorMessage = `Failed to ${id ? 'update' : 'create'} survey. Please try again.`;
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       
       toast.error(errorMessage);
     } finally {
@@ -211,9 +217,9 @@ const CreateSurvey = () => {
   const publishSurvey = () => saveSurvey(true);
 
   const questionTypes = [
-    { type: 'text', label: 'Text Input', icon: '📝' },
-    { type: 'textarea', label: 'Text Area', icon: '📄' },
-    { type: 'radio', label: 'Radio Buttons', icon: '🔘' },
+    { type: 'short_text', label: 'Text Input', icon: '📝' },
+    { type: 'long_text', label: 'Text Area', icon: '📄' },
+    { type: 'multiple_choice', label: 'Radio Buttons', icon: '🔘' },
     { type: 'checkbox', label: 'Checkboxes', icon: '☑️' },
     { type: 'dropdown', label: 'Dropdown', icon: '📋' },
     { type: 'rating', label: 'Rating (1-5)', icon: '⭐' }
