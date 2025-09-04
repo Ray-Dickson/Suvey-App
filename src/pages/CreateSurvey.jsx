@@ -1,5 +1,5 @@
 // src/pages/CreateSurvey.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DndProvider, useDrop, useDrag } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import QuestionEditor from '../components/QuestionEditor';
+import { useAuth } from '../context/AuthContext';
 
 const CreateSurveyWrapper = () => {
   return (
@@ -27,12 +28,11 @@ const CreateSurveyWrapper = () => {
 const CreateSurvey = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+    const { state: { user } } = useAuth();
   const [survey, setSurvey] = useState({
     title: '',
     description: '',
     is_public: true,
-    allow_multiple_submissions: false,
-    requires_login: false,
     status: 'draft',
     questions: []
   });
@@ -54,7 +54,7 @@ const CreateSurvey = () => {
           });
         } catch (error) {
           toast.error('Failed to fetch survey');
-          console.error('Error fetching survey:', error);
+          console.error('Error fetching survey:', error.response?.data || error.message);
         } finally {
           setLoading(false);
         }
@@ -146,40 +146,63 @@ const CreateSurvey = () => {
 
     try {
       setSaving(true);
-      const surveyData = {
-        ...survey,
-        status: publish ? 'published' : survey.status,
-        questions: survey.questions.map(question => ({
-          id: question.id.startsWith('temp-') ? null : question.id,
+      
+      // Transform questions data for backend
+      const transformedQuestions = survey.questions.map(question => {
+        const questionData = {
           question_text: question.question_text,
           type: question.type,
           is_required: question.is_required,
-          display_order: question.display_order,
-          options: question.options?.map(option => ({
-            id: option.id.startsWith('temp-') ? null : option.id,
-            option_text: option.option_text,
-            display_order: option.display_order
-          })) || []
-        }))
+          display_order: question.display_order
+        };
+
+        // Only include options for relevant question types
+        if (['radio', 'checkbox', 'dropdown'].includes(question.type)) {
+          questionData.options = question.options?.map(option => option.option_text) || [];
+        }
+
+        return questionData;
+      });
+
+      const surveyData = {
+        title: survey.title,
+        description: survey.description,
+        is_public: survey.is_public,
+        status: publish ? 'published' : survey.status,
+        questions: transformedQuestions,
+        user_id: user?.id  // Include user ID from context
       };
+
+      console.log('Sending survey data to backend:', surveyData); // Debug log
 
       let response;
       if (id) {
         response = await API.put(`/surveys/${id}`, surveyData);
         toast.success(`Survey ${publish ? 'published' : 'updated'} successfully`);
       } else {
-        response = await API.post('/surveys', surveyData);
+        response = await API.post('/surveys/create', surveyData);
         toast.success(`Survey ${publish ? 'published' : 'created'} successfully`);
       }
+
+      console.log('Backend response:', response.data); // Debug log
 
       if (publish) {
         navigate('/dashboard');
       } else if (!id) {
-        navigate(`/builder/${response.data.id}`);
+        navigate(`/builder/${response.data.surveyId}`);
       }
     } catch (error) {
-      toast.error(`Failed to ${id ? 'update' : 'create'} survey`);
-      console.error('Error saving survey:', error);
+      console.error('Full error details:', {
+        message: error.message,
+        response: error.response?.data,
+        stack: error.stack
+      });
+
+      const errorMessage = error.response?.data?.message 
+        ? error.response.data.message
+        : `Failed to ${id ? 'update' : 'create'} survey. Please try again.`;
+      
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
