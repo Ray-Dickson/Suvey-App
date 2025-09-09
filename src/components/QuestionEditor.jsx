@@ -1,12 +1,18 @@
 // src/components/QuestionEditor.jsx
 import { useState } from 'react';
 import { Plus, Trash2, Settings } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) => {
   const [showConditional, setShowConditional] = useState(false);
 
   const handleQuestionChange = (field, value) => {
     updateQuestion(question.id, { [field]: value });
+    
+    // Show toast for important changes
+    if (field === 'is_required') {
+      toast.success(value ? 'Question marked as required' : 'Question marked as optional');
+    }
   };
 
   const addOption = () => {
@@ -19,6 +25,7 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
       }
     ];
     updateQuestion(question.id, { options: newOptions });
+    toast.success('Option added successfully');
   };
 
   const updateOption = (index, value) => {
@@ -31,8 +38,13 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
   };
 
   const removeOption = (index) => {
+    if ((question.options || []).length <= 1) {
+      toast.error('At least one option is required');
+      return;
+    }
     const newOptions = (question.options || []).filter((_, i) => i !== index);
     updateQuestion(question.id, { options: newOptions });
+    toast.success('Option removed successfully');
   };
 
   const getQuestionTypeLabel = (type) => {

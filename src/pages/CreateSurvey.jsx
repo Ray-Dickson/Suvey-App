@@ -52,6 +52,7 @@ const CreateSurvey = () => {
             ...surveyData,
             questions: surveyData.questions.sort((a, b) => a.display_order - b.display_order)
           });
+          toast.success(`Survey "${surveyData.title}" loaded successfully`);
         } catch (error) {
           toast.error('Failed to fetch survey');
           console.error('Error fetching survey:', error.response?.data || error.message);
@@ -85,6 +86,17 @@ const CreateSurvey = () => {
       questions: [...prev.questions, newQuestion]
     }));
     setIsEditing(true);
+    
+    const questionTypeLabels = {
+      short_text: 'Text Input',
+      long_text: 'Text Area',
+      multiple_choice: 'Radio Buttons',
+      checkbox: 'Checkboxes',
+      dropdown: 'Dropdown',
+      rating: 'Rating (1-5)'
+    };
+    
+    toast.success(`${questionTypeLabels[type]} question added!`);
   };
 
   const updateQuestion = (questionId, updates) => {
@@ -100,7 +112,6 @@ const CreateSurvey = () => {
     if (!questionId.startsWith('temp-')) {
       try {
         await API.delete(`/questions/${questionId}`);
-        toast.success('Question deleted');
       } catch (error) {
         toast.error('Failed to delete question');
         console.error('Error deleting question:', error);
@@ -114,6 +125,8 @@ const CreateSurvey = () => {
         .filter(q => q.id !== questionId)
         .map((q, index) => ({ ...q, display_order: index + 1 }))
     }));
+    
+    toast.success('Question removed from survey');
   };
 
   const moveQuestion = (dragIndex, hoverIndex) => {
@@ -131,6 +144,8 @@ const CreateSurvey = () => {
       ...prev,
       questions: updatedQuestions
     }));
+    
+    toast.success('Question order updated');
   };
 
   const saveSurvey = async (publish = false) => {
@@ -178,10 +193,10 @@ const CreateSurvey = () => {
       let response;
       if (id) {
         response = await API.put(`/surveys/${id}`, surveyData);
-        toast.success(`Survey ${publish ? 'published' : 'updated'} successfully`);
+        toast.success(`Survey ${publish ? 'published and is now live!' : 'updated successfully'}`);
       } else {
         response = await API.post('/surveys/create', surveyData);
-        toast.success(`Survey ${publish ? 'published' : 'created'} successfully`);
+        toast.success(`Survey ${publish ? 'published and is now live!' : 'saved as draft successfully!'}`);
       }
 
       console.log('Backend response:', response.data); // Debug log

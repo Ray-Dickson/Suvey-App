@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react';
-import { Loader, Toast } from '../components/UI';
+import { Loader } from '../components/UI';
+import toast from 'react-hot-toast';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -16,8 +17,6 @@ export default function Register() {
 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,8 +25,6 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setLoading(true);
 
     try {
@@ -35,11 +32,11 @@ export default function Register() {
       const { token } = res.data;
 
       localStorage.setItem('token', token);
-      setSuccess('Registration successful! Redirecting...');
+      toast.success('Registration successful! Welcome to SurveyApp!');
       setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
       const message = err.response?.data?.message || 'Registration failed. Please try again.';
-      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -173,8 +170,6 @@ export default function Register() {
       </div>
 
       {loading && <Loader />}
-      {error && <Toast message={error} type="error" onClose={() => setError('')} />}
-      {success && <Toast message={success} type="success" onClose={() => setSuccess('')} />}
     </div>
   );
 }

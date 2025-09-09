@@ -49,6 +49,8 @@ const Analytics = () => {
       if (transformedSurvey.questions.length > 0) {
         setSelectedQuestion(transformedSurvey.questions[0]);
       }
+      
+      toast.success(`Analytics for "${transformedSurvey.title}" loaded: ${response.data.responses.length} responses`);
     } catch (error) {
       toast.error('Failed to fetch analytics data');
       console.error('Error fetching analytics:', error);
@@ -325,7 +327,10 @@ const Analytics = () => {
         </div>
         
         <button
-          onClick={() => window.print()}
+          onClick={() => {
+            window.print();
+            toast.success('Analytics exported successfully!');
+          }}
           className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center"
         >
           <Download className="h-4 w-4 mr-2" />

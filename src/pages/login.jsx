@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import { Loader, Toast } from '../components/UI';
+import { Loader } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,7 +16,6 @@ export default function Login() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
@@ -24,46 +24,47 @@ export default function Login() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
-  setLoading(true);
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const res = await axios.post('http://localhost:5000/api/auth/login', formData);
-    
-    // Ensure response contains required data
-    if (!res.data.token || !res.data.user) {
-      throw new Error('Invalid response from server');
+    try {
+      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
+      
+      // Ensure response contains required data
+      if (!res.data.token || !res.data.user) {
+        throw new Error('Invalid response from server');
+      }
+
+      // Dispatch login action
+      dispatch({
+        type: 'LOGIN',
+        payload: { 
+          user: res.data.user,  // Make sure this matches your user object structure
+          token: res.data.token
+        },
+      });
+
+      // Store token in localStorage (AuthContext's useEffect will handle user storage)
+      localStorage.setItem('token', res.data.token);
+      
+      toast.success('Login successful! Welcome back!');
+      
+      // Navigate after state updates
+      setTimeout(() => navigate('/dashboard'), 1000);
+
+    } catch (err) {
+      const message = err.response?.data?.message || 
+                     err.message || 
+                     'Login failed. Please try again.';
+      toast.error(message);
+      
+      // Clear any partial auth state on failure
+      dispatch({ type: 'LOGOUT' });
+      localStorage.removeItem('token');
+    } finally {
+      setLoading(false);
     }
-
-    // Dispatch login action
-    dispatch({
-      type: 'LOGIN',
-      payload: { 
-        user: res.data.user,  // Make sure this matches your user object structure
-        token: res.data.token
-      },
-    });
-
-    // Store token in localStorage (AuthContext's useEffect will handle user storage)
-    localStorage.setItem('token', res.data.token);
-    
-    // Navigate after state updates
-    setTimeout(() => navigate('/dashboard'), 0);
-
-  } catch (err) {
-    const message = err.response?.data?.message || 
-                   err.message || 
-                   'Login failed. Please try again.';
-    setError(message);
-    
-    // Clear any partial auth state on failure
-    dispatch({ type: 'LOGOUT' });
-    localStorage.removeItem('token');
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
   return (
@@ -151,7 +152,6 @@ export default function Login() {
       </div>
 
       {loading && <Loader />}
-      {error && <Toast message={error} type="error" onClose={() => setError('')} />}
     </div>
   );
 }

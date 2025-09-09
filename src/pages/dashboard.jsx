@@ -10,13 +10,17 @@ import {
   Calendar,
   Users,
   Copy,
-  Check
+  Check,
+  Loader2
 } from 'lucide-react';
 import { getUserSurveys } from '../services/surveyAPI'; // ✅ real API
+import API from '../services/api';
+import toast from 'react-hot-toast';
 
 export default function Dashboard() {
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [shareModal, setShareModal] = useState({ open: false, survey: null, copied: false });
 
   const getStatusBadge = (status) => {
@@ -43,12 +47,27 @@ export default function Dashboard() {
   };
 
   const handleDeleteSurvey = async (surveyId) => {
-    if (window.confirm('Are you sure you want to delete this survey?')) {
+    if (window.confirm('Are you sure you want to delete this survey? This action cannot be undone.')) {
+      setIsDeleting(true);
+      
       try {
+        await API.delete(`/surveys/${surveyId}`);
+        
         setSurveys(surveys.filter(survey => survey.id !== surveyId));
-        // You can call your deleteSurvey endpoint here if needed
+        toast.success('Survey deleted successfully');
+        
       } catch (error) {
         console.error('Error deleting survey:', error);
+        
+        if (error.response?.status === 401) {
+          toast.error('Please login again to delete surveys');
+        } else if (error.response?.status === 404) {
+          toast.error('Survey not found');
+        } else {
+          toast.error('Failed to delete survey. Please try again.');
+        }
+      } finally {
+        setIsDeleting(false);
       }
     }
   };
@@ -56,17 +75,20 @@ export default function Dashboard() {
   const handleShareSurvey = (survey) => {
     const surveyUrl = `${window.location.origin}/survey/${survey.id}`;
     setShareModal({ open: true, survey, copied: false, url: surveyUrl });
+    toast.success(`Share link generated for "${survey.title}"`);
   };
 
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(shareModal.url);
       setShareModal(prev => ({ ...prev, copied: true }));
+      toast.success('Survey link copied to clipboard!');
       setTimeout(() => {
         setShareModal(prev => ({ ...prev, copied: false }));
       }, 2000);
     } catch (error) {
       console.error('Failed to copy link');
+      toast.error('Failed to copy link to clipboard');
     }
   };
 
@@ -78,9 +100,11 @@ export default function Dashboard() {
         
         const data = await getUserSurveys(user.id);
         setSurveys(data);
+        toast.success(`Loaded ${data.length} survey${data.length !== 1 ? 's' : ''}`);
         
       } catch (error) {
         console.error('Failed to fetch surveys:', error.message);
+        toast.error('Failed to load surveys');
       } finally {
         setLoading(false);
       }
@@ -213,8 +237,17 @@ export default function Dashboard() {
                     <button onClick={() => handleShareSurvey(survey)} className="p-2 text-gray-400 hover:text-gray-600" title="Share">
                       <Share2 className="h-5 w-5" />
                     </button>
-                    <button onClick={() => handleDeleteSurvey(survey.id)} className="p-2 text-gray-400 hover:text-red-600" title="Delete">
-                      <Trash2 className="h-5 w-5" />
+                    <button 
+                      onClick={() => handleDeleteSurvey(survey.id)} 
+                      disabled={isDeleting}
+                      className="p-2 text-gray-400 hover:text-red-600 disabled:opacity-50" 
+                      title="Delete"
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-5 w-5" />
+                      )}
                     </button>
                   </div>
                 </div>

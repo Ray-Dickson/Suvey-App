@@ -9,6 +9,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const DashboardLayout = () => {
 
   const handleLogout = () => {
     dispatch({ type: 'LOGOUT' });
+    toast.success('Logged out successfully. See you next time!');
     navigate('/login');
   };
 

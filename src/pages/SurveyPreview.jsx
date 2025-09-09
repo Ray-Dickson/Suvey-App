@@ -45,9 +45,14 @@ const SurveyPreview = () => {
           }
         });
         setResponses(initialResponses);
+        toast.success(`Survey "${transformedSurvey.title}" loaded successfully`);
       } catch (err) {
         console.error('Error fetching survey:', err);
-        toast.error('Failed to load survey');
+        if (err.response?.status === 404) {
+          toast.error('Survey not found or has been removed');
+        } else {
+          toast.error('Failed to load survey. Please try again later.');
+        }
       } finally {
         setLoading(false);
       }
@@ -114,7 +119,7 @@ const SurveyPreview = () => {
         }))
       });
       setSubmitted(true);
-      toast.success('Thank you for your response!');
+      toast.success('Thank you for your response! Your feedback is valuable to us.');
     } catch (error) {
       console.error('Error submitting response:', error);
       toast.error('Failed to submit response');
