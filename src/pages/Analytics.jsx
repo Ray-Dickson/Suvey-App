@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import { 
@@ -30,6 +30,10 @@ const Analytics = () => {
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     fetchData();
@@ -139,6 +143,37 @@ const Analytics = () => {
   };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+
+  const availableTypes = useMemo(() => {
+    if (!survey) return [];
+    const types = Array.from(new Set(survey.questions.map(q => q.type)));
+    return types;
+  }, [survey]);
+
+  const filteredQuestions = useMemo(() => {
+    if (!survey) return [];
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const matches = survey.questions.filter(q => {
+      const matchesType = typeFilter === 'all' ? true : q.type === typeFilter;
+      const matchesText = normalizedQuery.length === 0 ? true : (q.question || '').toLowerCase().includes(normalizedQuery);
+      return matchesType && matchesText;
+    });
+    // Reset page if current page overflows
+    const maxPage = Math.max(1, Math.ceil(matches.length / pageSize));
+    if (currentPage > maxPage) {
+      setCurrentPage(1);
+    }
+    return matches;
+  }, [survey, searchQuery, typeFilter, currentPage]);
+
+  const paginatedQuestions = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredQuestions.slice(start, start + pageSize);
+  }, [filteredQuestions, currentPage]);
+
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
+  }, [filteredQuestions]);
 
   const renderChart = (question, stats) => {
     if (stats.type === 'rating') {
@@ -396,45 +431,100 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Question Selector */}
+      {/* Question Browser + Analytics */}
       {survey.questions.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Select Question to Analyze</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {survey.questions.map((question, index) => (
-              <button
-                key={question.id}
-                onClick={() => setSelectedQuestion(question)}
-                className={`p-3 text-left rounded-lg border transition-colors duration-200 ${
-                  selectedQuestion?.id === question.id
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <div className="text-sm font-medium truncate">
-                  {index + 1}. {question.question}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left: Question Browser */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow p-4 sticky top-4">
+              <h2 className="text-lg font-medium text-gray-900 mb-3">Browse Questions</h2>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                    placeholder="Search question..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {question.type} • {getQuestionStats(question).total} responses
+                <div>
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All types</option>
+                    {availableTypes.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
                 </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+                <div className="text-xs text-gray-500">{filteredQuestions.length} results</div>
+              </div>
 
-      {/* Question Analytics */}
-      {selectedQuestion && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
-              {survey.questions.findIndex(q => q.id === selectedQuestion.id) + 1}. {selectedQuestion.question}
-            </h2>
-            <p className="text-gray-600 mb-4">
-              {selectedQuestion.type} • {getQuestionStats(selectedQuestion).total} responses
-            </p>
-            
-            {renderChart(selectedQuestion, getQuestionStats(selectedQuestion))}
+              <div className="mt-4 divide-y divide-gray-100 max-h-[28rem] overflow-y-auto">
+                {paginatedQuestions.length === 0 && (
+                  <div className="py-8 text-center text-gray-500 text-sm">No questions match your filters.</div>
+                )}
+                {paginatedQuestions.map((question) => {
+                  const index = survey.questions.findIndex(q => q.id === question.id);
+                  const isActive = selectedQuestion?.id === question.id;
+                  const stats = getQuestionStats(question);
+                  return (
+                    <button
+                      key={question.id}
+                      onClick={() => setSelectedQuestion(question)}
+                      className={`w-full text-left px-3 py-3 focus:outline-none transition-colors duration-200 ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className={`text-sm font-medium truncate ${isActive ? 'text-blue-700' : 'text-gray-900'}`}>{index + 1}. {question.question}</div>
+                          <div className="text-xs text-gray-500 mt-1 truncate">{question.type} • {stats.total} responses</div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex items-center justify-between">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 rounded-md border text-sm ${currentPage === 1 ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                >
+                  Prev
+                </button>
+                <div className="text-xs text-gray-500">Page {currentPage} of {totalPages}</div>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-1 rounded-md border text-sm ${currentPage === totalPages ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Analytics Panel */}
+          <div className="lg:col-span-3 space-y-6">
+            {selectedQuestion ? (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                  {survey.questions.findIndex(q => q.id === selectedQuestion.id) + 1}. {selectedQuestion.question}
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  {selectedQuestion.type} • {getQuestionStats(selectedQuestion).total} responses
+                </p>
+                {renderChart(selectedQuestion, getQuestionStats(selectedQuestion))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+                Select a question from the left to view analytics.
+              </div>
+            )}
           </div>
         </div>
       )}

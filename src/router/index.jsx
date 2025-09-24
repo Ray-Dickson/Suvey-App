@@ -1,5 +1,5 @@
 // src/router/index.jsx
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import Login from '../pages/login';
 import Register from '../pages/register';
 import Dashboard from '../pages/dashboard';
@@ -17,6 +17,10 @@ const router = createBrowserRouter([
     path: '/',
     element: <PrivateRoute />,
     children: [
+      {
+        index: true,
+        element: <Navigate to="/dashboard" replace />
+      },
       {
         path: 'dashboard',
         element: <DashboardLayout />,

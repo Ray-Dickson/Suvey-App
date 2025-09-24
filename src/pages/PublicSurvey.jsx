@@ -34,6 +34,9 @@ const PublicSurvey = () => {
         };
 
         setSurvey(transformedSurvey);
+        if ((transformedSurvey.status || '').toLowerCase() !== 'published') {
+          toast.error('This survey is not accepting responses');
+        }
         
         // Initialize responses object
         const initialResponses = {};
@@ -112,6 +115,12 @@ const PublicSurvey = () => {
 
     try {
       setSubmitting(true);
+      // Block submission if not published
+      if ((survey.status || '').toLowerCase() !== 'published') {
+        toast.error('This survey is not accepting responses');
+        return;
+      }
+
       await API.post(`/responses/${id}`, {
         answers: Object.entries(responses).map(([questionId, response]) => ({
           question_id: questionId,
@@ -316,7 +325,7 @@ const PublicSurvey = () => {
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || (survey && (survey.status || '').toLowerCase() !== 'published')}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center"
           >
             {submitting ? (

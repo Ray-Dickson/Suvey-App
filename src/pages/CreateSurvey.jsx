@@ -279,13 +279,13 @@ const CreateSurvey = () => {
           )}
           <button
             onClick={() => saveSurvey()}
-            disabled={saving}
+            disabled={saving || (id && (survey.status || '').toLowerCase() !== 'draft')}
             className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-70"
           >
             <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? 'Saving...' : ((id && (survey.status || '').toLowerCase() !== 'draft') ? 'Locked' : 'Save')}
           </button>
-          {survey.status === 'draft' && (
+          {(survey.status || '').toLowerCase() === 'draft' && (
             <button
               onClick={publishSurvey}
               disabled={saving}

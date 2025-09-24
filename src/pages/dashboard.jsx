@@ -73,6 +73,10 @@ export default function Dashboard() {
   };
 
   const handleShareSurvey = (survey) => {
+    if ((survey.status || '').toLowerCase() !== 'published') {
+      toast.error('You can only share a survey after publishing');
+      return;
+    }
     const surveyUrl = `${window.location.origin}/survey/${survey.id}`;
     setShareModal({ open: true, survey, copied: false, url: surveyUrl });
     toast.success(`Share link generated for "${survey.title}"`);
@@ -231,7 +235,17 @@ export default function Dashboard() {
                     <Link to={`/dashboard/survey/analytics/${survey.id}`} className="p-2 text-gray-400 hover:text-gray-600" title="Analytics">
                       <BarChart3 className="h-5 w-5" />
                     </Link>
-                    <Link to={`/dashboard/survey/edit/${survey.id}`} className="p-2 text-gray-400 hover:text-gray-600" title="Edit">
+                    <Link
+                      to={(survey.status || '').toLowerCase() === 'draft' ? `/dashboard/survey/edit/${survey.id}` : '#'}
+                      onClick={(e) => {
+                        if ((survey.status || '').toLowerCase() !== 'draft') {
+                          e.preventDefault();
+                          toast.error('Published surveys cannot be edited');
+                        }
+                      }}
+                      className="p-2 text-gray-400 hover:text-gray-600"
+                      title="Edit"
+                    >
                       <Edit className="h-5 w-5" />
                     </Link>
                     <button onClick={() => handleShareSurvey(survey)} className="p-2 text-gray-400 hover:text-gray-600" title="Share">
@@ -259,7 +273,7 @@ export default function Dashboard() {
 
       {/* Share Modal */}
       {shareModal.open && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
              onClick={() => setShareModal({ open: false, survey: null, copied: false })}>
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-4 border-b border-gray-200">
