@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import API from '../services/api';
 import { Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react';
 import { Loader } from '../components/UI';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function Register() {
   const navigate = useNavigate();
+  const { dispatch } = useAuth();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -28,15 +30,35 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const res = await axios.post('/api/auth/register', formData);
-      const { token } = res.data;
+      const res = await API.post('/auth/register', formData);
+      const { token, user } = res.data;
 
+      // Ensure response contains required data
+      if (!token || !user) {
+        throw new Error('Invalid response from server');
+      }
+
+      // Dispatch login action to update AuthContext
+      dispatch({
+        type: 'LOGIN',
+        payload: { 
+          user: user,
+          token: token
+        },
+      });
+
+      // Store token in localStorage (AuthContext's useEffect will handle user storage)
       localStorage.setItem('token', token);
+      
       toast.success('Registration successful! Welcome to SurveyApp!');
       setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
-      const message = err.response?.data?.message || 'Registration failed. Please try again.';
+      const message = err.response?.data?.message || err.message || 'Registration failed. Please try again.';
       toast.error(message);
+      
+      // Clear any partial auth state on failure
+      dispatch({ type: 'LOGOUT' });
+      localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }

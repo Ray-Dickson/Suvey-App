@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 
 const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) => {
   const [showConditional, setShowConditional] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleQuestionChange = (field, value) => {
     updateQuestion(question.id, { [field]: value });
@@ -154,7 +155,7 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
           <span className="text-sm font-medium text-gray-500">
             {getQuestionTypeLabel(question.type)}
           </span>
-          {question.is_required && (
+          {Boolean(question.is_required) && (
             <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
               Required
             </span>
@@ -163,7 +164,10 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
         
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={() => {
+              setIsEditing(!isEditing);
+              setShowSettings(!isEditing);
+            }}
             className="p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
             title="Toggle edit mode"
           >
@@ -216,14 +220,14 @@ const QuestionEditor = ({ question, updateQuestion, isEditing, setIsEditing }) =
       )}
 
       {/* Question Settings */}
-      {isEditing && (
+      {showSettings && (
         <div className="space-y-3 pt-3 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-700">Required</label>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
-                checked={question.is_required}
+                checked={!!question.is_required}
                 onChange={(e) => handleQuestionChange('is_required', e.target.checked)}
                 className="sr-only peer"
               />

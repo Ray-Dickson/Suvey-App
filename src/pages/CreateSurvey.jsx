@@ -70,7 +70,7 @@ const CreateSurvey = () => {
       id: `temp-${Date.now()}`,
       question_text: '',
       type,
-      is_required: false,
+      is_required: true,
       display_order: survey.questions.length + 1,
       options: ['multiple_choice', 'checkbox', 'dropdown'].includes(type) 
         ? [{ 
@@ -349,7 +349,7 @@ const CreateSurvey = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+          <div className="bg-white rounded-xl shadow-sm p-6 space-y-6 lg:sticky lg:top-6">
             <h2 className="text-lg font-semibold text-gray-800">Question Types</h2>
             <div className="grid grid-cols-1 gap-3">
               {questionTypes.map((type) => (

@@ -27,7 +27,7 @@ const SurveyPreview = () => {
             id: question.id,
             question: question.question_text,
             type: question.type,
-            required: question.is_required,
+            required: !!question.is_required,
             options: question.options ? question.options.map(option => option.option_text) : [],
             displayOrder: question.display_order
           }))

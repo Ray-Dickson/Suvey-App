@@ -15,9 +15,11 @@ import {
 } from 'lucide-react';
 import { getUserSurveys } from '../services/surveyAPI'; // ✅ real API
 import API from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function Dashboard() {
+  const { state } = useAuth();
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -99,10 +101,9 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchSurveys() {
       try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user?.id) throw new Error('User ID not found');
+        if (!state.user?.id) throw new Error('User ID not found');
         
-        const data = await getUserSurveys(user.id);
+        const data = await getUserSurveys(state.user.id);
         setSurveys(data);
         toast.success(`Loaded ${data.length} survey${data.length !== 1 ? 's' : ''}`);
         
@@ -114,8 +115,10 @@ export default function Dashboard() {
       }
     }
 
-    fetchSurveys();
-  }, []);
+    if (state.isAuthenticated && state.user) {
+      fetchSurveys();
+    }
+  }, [state.isAuthenticated, state.user]);
 
   if (loading) {
     return (

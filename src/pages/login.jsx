@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import API from '../services/api';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Loader } from '../components/UI';
 import { useAuth } from '../context/AuthContext';
@@ -28,7 +28,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
+      const res = await API.post('/auth/login', formData);
       
       // Ensure response contains required data
       if (!res.data.token || !res.data.user) {
