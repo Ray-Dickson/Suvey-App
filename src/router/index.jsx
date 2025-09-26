@@ -10,6 +10,7 @@ import MySurveys from '../pages/MySurveys';
 import Analytics from '../pages/Analytics';
 import SurveyPreview from '../pages/SurveyPreview';
 import PublicSurvey from '../pages/PublicSurvey';
+import AdminDashboard from '../pages/AdminDashboard';
 //import SurveyEdit from '../pages/SurveyEdit'; 
 
 const router = createBrowserRouter([
@@ -31,6 +32,7 @@ const router = createBrowserRouter([
           { path: 'survey/preview/:id', element: <SurveyPreview /> },
           { path: 'survey/edit/:id', element: <CreateSurveyWrapper /> },
           { path: 'survey/analytics/:id', element: <Analytics /> },
+          { path: 'admin', element: <AdminDashboard /> },
           
         ],
       },

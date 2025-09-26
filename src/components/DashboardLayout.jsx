@@ -6,7 +6,9 @@ import {
   User,
   LogOut,
   Menu,
-  X
+  X,
+  Shield,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -20,6 +22,7 @@ const DashboardLayout = () => {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
     { name: 'Create Survey', href: '/dashboard/create', icon: Plus },
+    ...(user?.role === 'admin' ? [{ name: 'Admin Panel', href: '/dashboard/admin', icon: Shield }] : []),
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -80,6 +83,12 @@ const DashboardLayout = () => {
                     </div>
                     <div className="text-sm">
                       <p className="text-gray-900 font-medium">{user?.name || 'User'}</p>
+                      {user?.role === 'admin' && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Admin
+                        </span>
+                      )}
                     </div>
                   </div>
                   <button
